@@ -56,36 +56,9 @@ static inline void set_nkro_bit(uint8_t code)
     }
 }
 
-void report_hid_key()
-{
-    if (!tud_hid_ready()) {
-        return;
-    }
-
-    uint16_t keys = aic_runtime.touch ? gui_keypad_read() : keypad_read();
-
-    memset(&hid_nkro, 0, sizeof(hid_nkro));
-
-    if (cardio_autopin_rolling()) {
-        int auto_pin_key = cardio_get_pin_key();
-        if (auto_pin_key > 0) {
-            set_nkro_bit(auto_pin_key);
-        }
-    } else {
-        for (int i = 0; i < keypad_key_num(); i++) {
-            if (keys & (1 << i)) {
-                set_nkro_bit(keymap[i]);
-            }
-        }
-    }
-
-    tud_hid_n_report(1, 0, &hid_nkro, sizeof(hid_nkro));
-}
-
 void report_usb_hid()
 {
     cardio_report_cardio();
-    report_hid_key();
 }
 
 static uint64_t last_hid_time = 0;
@@ -255,7 +228,6 @@ static void reader_run()
 void wait_loop()
 {
     keypad_update();
-    report_hid_key();
 
     tud_task();
     cli_run();
